@@ -21,6 +21,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import PeopleIcon from '@mui/icons-material/People';
 import PaidIcon from '@mui/icons-material/Paid';
@@ -32,6 +33,7 @@ const navItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { label: 'Users', icon: <PeopleIcon />, path: '/users' },
   { label: 'Drivers', icon: <TwoWheelerIcon />, path: '/drivers' },
+  { label: 'All Orders', icon: <ReceiptLongIcon />, path: '/orders' },
   { label: 'Revenue', icon: <PaidIcon />, path: '/revenue' },
   { label: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];

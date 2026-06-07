@@ -2,13 +2,16 @@ import Chip from '@mui/material/Chip';
 
 // Maps a status string to a MUI Chip with the right color + label.
 const STATUS_MAP = {
-  // order statuses
+  // order / delivery statuses
   pending: { color: 'default', label: 'Pending' },
   assigned: { color: 'info', label: 'Assigned' },
   in_transit: { color: 'secondary', label: 'In transit' },
   delivered: { color: 'success', label: 'Delivered' },
   cancelled: { color: 'error', label: 'Cancelled' },
   unassigned: { color: 'warning', label: 'Unassigned' },
+  searching: { color: 'warning', label: 'Searching for rider' },
+  accepted: { color: 'info', label: 'Accepted' },
+  picked_up: { color: 'secondary', label: 'Picked up' },
   // driver/rider statuses
   active: { color: 'success', label: 'Active' },
   docs_pending: { color: 'warning', label: 'Docs pending' },

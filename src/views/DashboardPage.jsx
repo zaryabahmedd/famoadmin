@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const navigate = (href) => router.push(href);
 
   const activeOrders = orders.filter((o) => ['assigned', 'in_transit'].includes(o.status));
+  const unassigned = orders.filter((o) => o.status === 'unassigned');
   const onlineDrivers = drivers.filter((d) => d.online);
   const pendingDocs = drivers.filter((d) => d.status === 'docs_pending');
   const blocked = drivers.filter((d) => d.status === 'blocked');
@@ -58,6 +59,14 @@ export default function DashboardPage() {
     .reduce((s, o) => s + o.amount, 0);
 
   const attention = [
+    ...unassigned.map((o) => ({
+      id: o.id,
+      color: 'error.main',
+      title: `${o.id} unassigned in ${o.zone}`,
+      detail: `${o.service} · ${currency(o.amount)}`,
+      action: () => navigate('/orders'),
+      cta: 'Assign',
+    })),
     ...pendingDocs.map((d) => ({
       id: d.id,
       color: 'warning.main',
