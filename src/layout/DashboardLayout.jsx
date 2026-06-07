@@ -15,42 +15,24 @@ import ListItemText from '@mui/material/ListItemText';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
-import Badge from '@mui/material/Badge';
 import Divider from '@mui/material/Divider';
-import Tooltip from '@mui/material/Tooltip';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import MapIcon from '@mui/icons-material/Map';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import EventIcon from '@mui/icons-material/Event';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import PeopleIcon from '@mui/icons-material/People';
-import FactCheckIcon from '@mui/icons-material/FactCheck';
 import PaidIcon from '@mui/icons-material/Paid';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SettingsIcon from '@mui/icons-material/Settings';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-
-import { notifications } from '../data/dummyData';
 
 const drawerWidth = 256;
 
 const navItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { label: 'Live map', icon: <MapIcon />, path: '/live-map' },
-  { label: 'All orders', icon: <ReceiptLongIcon />, path: '/orders' },
-  { label: 'Scheduled', icon: <EventIcon />, path: '/scheduled' },
-  { label: 'Parcel tracking', icon: <LocalShippingIcon />, path: '/tracking' },
-  { label: 'Drivers', icon: <TwoWheelerIcon />, path: '/drivers' },
   { label: 'Users', icon: <PeopleIcon />, path: '/users' },
-  { label: 'Document approvals', icon: <FactCheckIcon />, path: '/approvals' },
+  { label: 'Drivers', icon: <TwoWheelerIcon />, path: '/drivers' },
   { label: 'Revenue', icon: <PaidIcon />, path: '/revenue' },
-  { label: 'Driver payouts', icon: <AccountBalanceWalletIcon />, path: '/payouts' },
-  { label: 'Notifications', icon: <NotificationsNoneIcon />, path: '/notifications' },
   { label: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
@@ -61,8 +43,6 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const navigate = (href) => router.push(href);
-
-  const criticalCount = notifications.filter((n) => n.level === 'critical').length;
 
   const activePath = (() => {
     const match = navItems
@@ -112,13 +92,7 @@ export default function DashboardLayout({ children }) {
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 40, color: selected ? '#fff' : 'text.secondary' }}>
-                  {item.label === 'Notifications' ? (
-                    <Badge color="error" badgeContent={criticalCount}>
-                      {item.icon}
-                    </Badge>
-                  ) : (
-                    item.icon
-                  )}
+                  {item.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={item.label}
@@ -171,13 +145,6 @@ export default function DashboardLayout({ children }) {
           <Typography variant="h6" noWrap sx={{ flexGrow: 1, fontWeight: 700 }}>
             {navItems.find((i) => i.path === activePath)?.label || 'Dashboard'}
           </Typography>
-          <Tooltip title="Notifications">
-            <IconButton color="inherit" onClick={() => navigate('/notifications')}>
-              <Badge color="error" badgeContent={criticalCount}>
-                <NotificationsNoneIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
           <Avatar src="https://randomuser.me/api/portraits/men/32.jpg" sx={{ ml: 1.5, width: 36, height: 36 }} />
         </Toolbar>
       </AppBar>

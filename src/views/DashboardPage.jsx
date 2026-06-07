@@ -43,7 +43,6 @@ import {
   customers,
   revenueByMonth,
   revenueByZone,
-  notifications,
 } from '../data/dummyData';
 
 export default function DashboardPage() {
@@ -51,7 +50,6 @@ export default function DashboardPage() {
   const navigate = (href) => router.push(href);
 
   const activeOrders = orders.filter((o) => ['assigned', 'in_transit'].includes(o.status));
-  const unassigned = orders.filter((o) => o.status === 'unassigned');
   const onlineDrivers = drivers.filter((d) => d.online);
   const pendingDocs = drivers.filter((d) => d.status === 'docs_pending');
   const blocked = drivers.filter((d) => d.status === 'blocked');
@@ -60,20 +58,12 @@ export default function DashboardPage() {
     .reduce((s, o) => s + o.amount, 0);
 
   const attention = [
-    ...unassigned.map((o) => ({
-      id: o.id,
-      color: 'error.main',
-      title: `${o.id} unassigned in ${o.zone}`,
-      detail: `${o.service} · ${currency(o.amount)}`,
-      action: () => navigate('/orders'),
-      cta: 'Assign',
-    })),
     ...pendingDocs.map((d) => ({
       id: d.id,
       color: 'warning.main',
       title: `${d.name} awaiting document review`,
       detail: 'Cannot go active until docs pass',
-      action: () => navigate('/approvals'),
+      action: () => navigate('/drivers'),
       cta: 'Review',
     })),
     ...blocked.map((d) => ({
@@ -81,7 +71,7 @@ export default function DashboardPage() {
       color: 'error.main',
       title: `${d.name} is blocked`,
       detail: 'Rejected document on file',
-      action: () => navigate('/approvals'),
+      action: () => navigate('/drivers'),
       cta: 'Open',
     })),
   ];
@@ -188,8 +178,8 @@ export default function DashboardPage() {
                   </Typography>
                 )}
               </List>
-              <Button fullWidth variant="outlined" sx={{ mt: 1 }} onClick={() => navigate('/live-map')}>
-                Open live map
+              <Button fullWidth variant="outlined" sx={{ mt: 1 }} onClick={() => navigate('/drivers')}>
+                View all drivers
               </Button>
             </CardContent>
           </Card>

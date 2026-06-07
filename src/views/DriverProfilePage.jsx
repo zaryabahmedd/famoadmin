@@ -115,7 +115,7 @@ export default function DriverProfilePage() {
                 </ListItem>
               </List>
               <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <Button fullWidth variant="outlined" onClick={() => navigate('/approvals')}>
+                <Button fullWidth variant="outlined" onClick={() => navigate('/drivers')}>
                   Documents
                 </Button>
                 <Button
