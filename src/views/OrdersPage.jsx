@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -11,6 +12,8 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
@@ -32,6 +35,7 @@ import NotesIcon from '@mui/icons-material/Notes';
 
 import PageHeader from '../components/PageHeader';
 import StatusChip, { currency } from '../components/StatusChip';
+import { orderCode, normalizeTrackingCode } from '../lib/orderCode';
 
 const TABS = [
   { value: 'active', label: 'Active', statuses: ['searching', 'accepted', 'picked_up'] },
@@ -75,6 +79,11 @@ export default function OrdersPage() {
   const [tab, setTab] = useState('active');
   const [search, setSearch] = useState('');
   const [drawer, setDrawer] = useState(null);
+  const [trackToast, setTrackToast] = useState({ open: false, msg: '' });
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -88,6 +97,28 @@ export default function OrdersPage() {
   }, []);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  /* ── resolve a ?track=FAMO-XXXXX deep link once orders are loaded ── */
+  useEffect(() => {
+    const code = searchParams.get('track');
+    if (!code || loading || orders.length === 0) return;
+
+    const suffix = normalizeTrackingCode(code);
+    const match = orders.find(
+      (o) => o.id.replace(/-/g, '').slice(-5).toLowerCase() === suffix
+    );
+
+    if (match) {
+      const matchTab = TABS.find((t) => t.statuses.includes(match.status));
+      if (matchTab) setTab(matchTab.value);
+      setDrawer(match);
+    } else {
+      setTrackToast({ open: true, msg: `No order matches tracking number FAMO-${suffix.toUpperCase()}` });
+    }
+
+    // clear the query param so the lookup doesn't re-trigger on every render
+    router.replace(pathname);
+  }, [searchParams, loading, orders, router, pathname]);
 
   const activeTab = TABS.find((t) => t.value === tab);
 
@@ -112,8 +143,8 @@ export default function OrdersPage() {
     {
       field: 'id',
       headerName: 'Order',
-      width: 120,
-      valueFormatter: (v) => v ? `#${v.slice(0, 8)}` : '—',
+      width: 130,
+      valueFormatter: (v) => v ? orderCode(v) : '—',
     },
     {
       field: 'customer',
@@ -280,7 +311,7 @@ export default function OrdersPage() {
             <Box sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }} noWrap>
-                  Order #{drawer.id?.slice(0, 8)}
+                  Order {orderCode(drawer.id)}
                 </Typography>
                 <StatusChip status={drawer.status} />
               </Box>
@@ -336,6 +367,17 @@ export default function OrdersPage() {
           </Box>
         )}
       </Drawer>
+
+      <Snackbar
+        open={trackToast.open}
+        autoHideDuration={4500}
+        onClose={() => setTrackToast((t) => ({ ...t, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="warning" variant="filled" onClose={() => setTrackToast((t) => ({ ...t, open: false }))} sx={{ width: '100%' }}>
+          {trackToast.msg}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

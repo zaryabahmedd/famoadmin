@@ -16,6 +16,8 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
@@ -26,6 +28,7 @@ import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import PeopleIcon from '@mui/icons-material/People';
 import PaidIcon from '@mui/icons-material/Paid';
 import SettingsIcon from '@mui/icons-material/Settings';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 
 const drawerWidth = 256;
 
@@ -42,9 +45,19 @@ export default function DashboardLayout({ children }) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [trackInput, setTrackInput] = useState('');
   const pathname = usePathname();
   const router = useRouter();
   const navigate = (href) => router.push(href);
+
+  const handleTrackSubmit = (e) => {
+    e.preventDefault();
+    const code = trackInput.trim();
+    if (!code) return;
+    router.push(`/orders?track=${encodeURIComponent(code)}`);
+    setTrackInput('');
+    if (!isDesktop) setMobileOpen(false);
+  };
 
   const activePath = (() => {
     const match = navItems
@@ -74,6 +87,24 @@ export default function DashboardLayout({ children }) {
           </Typography>
         </Box>
       </Toolbar>
+      <Divider />
+      <Box sx={{ px: 2.5, py: 2 }}>
+        <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 0.8, display: 'block', mb: 1 }}>
+          Track Package
+        </Typography>
+        <Box component="form" onSubmit={handleTrackSubmit}>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="FAMO-XXXXX"
+            value={trackInput}
+            onChange={(e) => setTrackInput(e.target.value)}
+            InputProps={{
+              startAdornment: <InputAdornment position="start"><LocalShippingIcon fontSize="small" sx={{ color: 'text.disabled' }} /></InputAdornment>,
+            }}
+          />
+        </Box>
+      </Box>
       <Divider />
       <List sx={{ px: 1.5, py: 1, flex: 1, overflowY: 'auto' }}>
         {navItems.map((item) => {
