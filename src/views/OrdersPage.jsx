@@ -122,9 +122,9 @@ export default function OrdersPage() {
       minWidth: 170,
       valueGetter: (_, row) => row.user?.full_name || '—',
       renderCell: ({ row }) => (
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, py: 0.75 }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>{row.user?.full_name || '—'}</Typography>
-          <Typography variant="caption" color="text.secondary" noWrap>{row.user?.phone_number || row.user?.email || ''}</Typography>
+          <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>{row.user?.phone_number || row.user?.email || ''}</Typography>
         </Box>
       ),
     },
@@ -135,9 +135,11 @@ export default function OrdersPage() {
       minWidth: 160,
       valueGetter: (_, row) => row.rider?.full_name || '—',
       renderCell: ({ row }) => (
-        <Typography variant="body2" noWrap color={row.rider?.full_name ? 'text.primary' : 'text.disabled'}>
-          {row.rider?.full_name || 'Unassigned'}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', minWidth: 0 }}>
+          <Typography variant="body2" noWrap color={row.rider?.full_name ? 'text.primary' : 'text.disabled'}>
+            {row.rider?.full_name || 'Unassigned'}
+          </Typography>
+        </Box>
       ),
     },
     {
@@ -147,7 +149,7 @@ export default function OrdersPage() {
       minWidth: 240,
       sortable: false,
       renderCell: ({ row }) => (
-        <Box sx={{ minWidth: 0, py: 0.5 }}>
+        <Box sx={{ minWidth: 0, py: 0.75, overflow: 'hidden' }}>
           <Typography variant="caption" noWrap sx={{ display: 'block' }}>
             <Box component="span" sx={{ color: 'success.main', fontWeight: 700 }}>From </Box>
             {row.pickup_address || '—'}
@@ -249,7 +251,8 @@ export default function OrdersPage() {
             columns={columns}
             getRowId={(r) => r.id}
             autoHeight
-            rowHeight={64}
+            getRowHeight={() => 'auto'}
+            getEstimatedRowHeight={() => 64}
             disableRowSelectionOnClick
             onRowClick={({ row }) => setDrawer(row)}
             initialState={{ pagination: { paginationModel: { pageSize: 15 } } }}
@@ -257,7 +260,7 @@ export default function OrdersPage() {
             sx={{
               border: 0,
               cursor: 'pointer',
-              '& .MuiDataGrid-cell': { borderBottom: '1px solid #f1f5f9', py: 1 },
+              '& .MuiDataGrid-cell': { borderBottom: '1px solid #f1f5f9', py: 1, display: 'flex', alignItems: 'center' },
               '& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0' },
             }}
           />

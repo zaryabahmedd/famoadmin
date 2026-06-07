@@ -170,13 +170,13 @@ export default function DriversPage() {
       flex: 1,
       minWidth: 220,
       renderCell: ({ row }) => (
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ height: '100%' }}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: 38, height: 38, fontSize: 14, fontWeight: 700 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ height: '100%', py: 0.75, overflow: 'hidden' }}>
+          <Avatar sx={{ bgcolor: 'primary.main', width: 38, height: 38, fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
             {initials(row.full_name)}
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>{row.full_name || '—'}</Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>{row.email}</Typography>
+            <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>{row.email}</Typography>
           </Box>
         </Stack>
       ),
@@ -317,13 +317,14 @@ export default function DriversPage() {
             columns={columns}
             getRowId={(r) => r.id}
             autoHeight
-            rowHeight={68}
+            getRowHeight={() => 'auto'}
+            getEstimatedRowHeight={() => 68}
             disableRowSelectionOnClick
             initialState={{ pagination: { paginationModel: { pageSize: 15 } } }}
             pageSizeOptions={[15, 30, 50]}
             sx={{
               border: 0,
-              '& .MuiDataGrid-cell': { borderBottom: '1px solid #f1f5f9', py: 1 },
+              '& .MuiDataGrid-cell': { borderBottom: '1px solid #f1f5f9', py: 1, display: 'flex', alignItems: 'center' },
               '& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0' },
             }}
           />
