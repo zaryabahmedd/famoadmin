@@ -593,19 +593,3 @@ export const notifications = [
     time: 'Yesterday',
   },
 ];
-
-// ---------------------------------------------------------------------------
-// Settings defaults
-// ---------------------------------------------------------------------------
-export const defaultSettings = {
-  features: {
-    liveTracking: true,
-    scheduledDeliveries: true,
-    cashOnDelivery: true,
-    inAppChat: true,
-    driverRatings: true,
-    surgePricing: false,
-    promoCodes: true,
-    autoAssignDrivers: true,
-  },
-};

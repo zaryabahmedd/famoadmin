@@ -8,8 +8,6 @@ import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
-import Switch from '@mui/material/Switch';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
@@ -21,24 +19,11 @@ import SaveIcon from '@mui/icons-material/Save';
 
 import PageHeader from '../components/PageHeader';
 import { currency } from '../components/StatusChip';
-import { defaultSettings } from '../data/dummyData';
-
-const featureLabels = {
-  liveTracking: 'Live order tracking',
-  scheduledDeliveries: 'Scheduled deliveries',
-  cashOnDelivery: 'Cash on delivery',
-  inAppChat: 'In-app chat',
-  driverRatings: 'Driver ratings',
-  surgePricing: 'Surge pricing',
-  promoCodes: 'Promo codes',
-  autoAssignDrivers: 'Auto-assign drivers',
-};
 
 export default function SettingsPage() {
   const [pricing, setPricing] = useState({ base_price: '', per_km_price: '' });
   const [pricingLoading, setPricingLoading] = useState(true);
   const [pricingSaving, setPricingSaving] = useState(false);
-  const [features, setFeatures] = useState(defaultSettings.features);
   const [toast, setToast] = useState('');
 
   useEffect(() => {
@@ -82,14 +67,11 @@ export default function SettingsPage() {
     }
   };
 
-  const toggleFeature = (key) => (e) =>
-    setFeatures((f) => ({ ...f, [key]: e.target.checked }));
-
   return (
     <Box>
       <PageHeader
         title="Settings"
-        subtitle="Live pricing controls and feature toggles."
+        subtitle="Live pricing controls."
         action={
           <Button
             variant="contained"
@@ -104,7 +86,7 @@ export default function SettingsPage() {
 
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
+          <Card sx={{ maxWidth: { md: 480 } }}>
             <CardHeader
               title="Pricing controls"
               subheader="Applies instantly across the admin panel, rider app and user app"
@@ -139,31 +121,6 @@ export default function SettingsPage() {
                   </Box>
                 </Stack>
               )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
-            <CardHeader title="Feature toggles" subheader="Turn major features on or off" />
-            <CardContent>
-              <Stack divider={<Divider flexItem />}>
-                {Object.keys(features).map((key) => (
-                  <FormControlLabel
-                    key={key}
-                    sx={{ justifyContent: 'space-between', ml: 0, py: 0.5 }}
-                    labelPlacement="start"
-                    control={
-                      <Switch checked={features[key]} onChange={toggleFeature(key)} />
-                    }
-                    label={
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {featureLabels[key]}
-                      </Typography>
-                    }
-                  />
-                ))}
-              </Stack>
             </CardContent>
           </Card>
         </Grid>
