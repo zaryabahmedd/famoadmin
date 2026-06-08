@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -15,10 +15,12 @@ import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import Snackbar from '@mui/material/Snackbar';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import SaveIcon from '@mui/icons-material/Save';
 
 import PageHeader from '../components/PageHeader';
+import { currency } from '../components/StatusChip';
 import { defaultSettings } from '../data/dummyData';
 
 const featureLabels = {
@@ -33,17 +35,52 @@ const featureLabels = {
 };
 
 export default function SettingsPage() {
-  const [pricing, setPricing] = useState({
-    baseFare: defaultSettings.baseFare,
-    perKmRate: defaultSettings.perKmRate,
-    commissionPct: defaultSettings.commissionPct,
-    minimumFare: defaultSettings.minimumFare,
-  });
+  const [pricing, setPricing] = useState({ base_price: '', per_km_price: '' });
+  const [pricingLoading, setPricingLoading] = useState(true);
+  const [pricingSaving, setPricingSaving] = useState(false);
   const [features, setFeatures] = useState(defaultSettings.features);
   const [toast, setToast] = useState('');
 
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setPricingLoading(true);
+      try {
+        const res = await fetch('/api/settings/pricing');
+        const data = await res.json();
+        if (active && res.ok) setPricing({ base_price: data.base_price, per_km_price: data.per_km_price });
+      } finally {
+        if (active) setPricingLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
   const updatePricing = (key) => (e) =>
     setPricing((p) => ({ ...p, [key]: e.target.value }));
+
+  const savePricing = async () => {
+    setPricingSaving(true);
+    try {
+      const res = await fetch('/api/settings/pricing', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          base_price: Number(pricing.base_price),
+          per_km_price: Number(pricing.per_km_price),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPricing({ base_price: data.base_price, per_km_price: data.per_km_price });
+        setToast('Pricing saved — riders and users will see the new fares immediately.');
+      } else {
+        setToast(data.error || 'Failed to save pricing.');
+      }
+    } finally {
+      setPricingSaving(false);
+    }
+  };
 
   const toggleFeature = (key) => (e) =>
     setFeatures((f) => ({ ...f, [key]: e.target.checked }));
@@ -54,7 +91,12 @@ export default function SettingsPage() {
         title="Settings"
         subtitle="Live pricing controls and feature toggles."
         action={
-          <Button variant="contained" startIcon={<SaveIcon />} onClick={() => setToast('Settings saved.')}>
+          <Button
+            variant="contained"
+            startIcon={pricingSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+            onClick={savePricing}
+            disabled={pricingLoading || pricingSaving}
+          >
             Save changes
           </Button>
         }
@@ -63,51 +105,40 @@ export default function SettingsPage() {
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
-            <CardHeader title="Pricing controls" subheader="Applies to all new orders" />
+            <CardHeader
+              title="Pricing controls"
+              subheader="Applies instantly across the admin panel, rider app and user app"
+            />
             <CardContent>
-              <Stack spacing={2.5}>
-                <TextField
-                  label="Base fare"
-                  type="number"
-                  value={pricing.baseFare}
-                  onChange={updatePricing('baseFare')}
-                  InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-                />
-                <TextField
-                  label="Per-km rate"
-                  type="number"
-                  value={pricing.perKmRate}
-                  onChange={updatePricing('perKmRate')}
-                  InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-                />
-                <TextField
-                  label="Minimum fare"
-                  type="number"
-                  value={pricing.minimumFare}
-                  onChange={updatePricing('minimumFare')}
-                  InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-                />
-                <TextField
-                  label="Platform commission"
-                  type="number"
-                  value={pricing.commissionPct}
-                  onChange={updatePricing('commissionPct')}
-                  InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
-                />
-                <Divider />
-                <Box sx={{ bgcolor: '#f8fafc', p: 2, borderRadius: 2 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Example: a 5 km trip costs
-                  </Typography>
-                  <Typography variant="h6">
-                    $
-                    {Math.max(
-                      Number(pricing.minimumFare),
-                      Number(pricing.baseFare) + Number(pricing.perKmRate) * 5
-                    ).toFixed(2)}
-                  </Typography>
-                </Box>
-              </Stack>
+              {pricingLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+              ) : (
+                <Stack spacing={2.5}>
+                  <TextField
+                    label="Base price"
+                    type="number"
+                    value={pricing.base_price}
+                    onChange={updatePricing('base_price')}
+                    InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }}
+                  />
+                  <TextField
+                    label="Per-km price"
+                    type="number"
+                    value={pricing.per_km_price}
+                    onChange={updatePricing('per_km_price')}
+                    InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }}
+                  />
+                  <Divider />
+                  <Box sx={{ bgcolor: '#f8fafc', p: 2, borderRadius: 2 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Example: a 5 km trip costs
+                    </Typography>
+                    <Typography variant="h6">
+                      {currency(Number(pricing.base_price || 0) + Number(pricing.per_km_price || 0) * 5)}
+                    </Typography>
+                  </Box>
+                </Stack>
+              )}
             </CardContent>
           </Card>
         </Grid>

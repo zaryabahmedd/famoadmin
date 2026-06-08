@@ -39,4 +39,4 @@ export function statusColor(status) {
 }
 
 export const currency = (n) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
+  new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(n || 0);

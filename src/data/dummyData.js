@@ -598,10 +598,6 @@ export const notifications = [
 // Settings defaults
 // ---------------------------------------------------------------------------
 export const defaultSettings = {
-  baseFare: 3.5,
-  perKmRate: 1.2,
-  commissionPct: 15,
-  minimumFare: 5,
   features: {
     liveTracking: true,
     scheduledDeliveries: true,
