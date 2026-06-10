@@ -29,6 +29,8 @@ import PeopleIcon from '@mui/icons-material/People';
 import PaidIcon from '@mui/icons-material/Paid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import LogoutIcon from '@mui/icons-material/Logout';
+import Tooltip from '@mui/material/Tooltip';
 
 const drawerWidth = 256;
 
@@ -70,6 +72,12 @@ export default function DashboardLayout({ children }) {
   const handleNav = (path) => {
     navigate(path);
     if (!isDesktop) setMobileOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
   };
 
   const drawer = (
@@ -139,7 +147,7 @@ export default function DashboardLayout({ children }) {
       <Divider />
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Avatar src="https://randomuser.me/api/portraits/men/32.jpg" />
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
             Alex Doyle
           </Typography>
@@ -147,6 +155,11 @@ export default function DashboardLayout({ children }) {
             Super admin
           </Typography>
         </Box>
+        <Tooltip title="Log out">
+          <IconButton onClick={handleLogout} size="small">
+            <LogoutIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
     </Box>
   );
