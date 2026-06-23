@@ -3,16 +3,6 @@ import { getAdminSession, unauthorized, forbidden, isSuperAdmin } from '@/lib/au
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { logAudit } from '@/lib/audit';
 
-async function countOtherActiveSuperAdmins(excludeId) {
-  const { count } = await supabaseAdmin
-    .from('admin_accounts')
-    .select('id', { count: 'exact', head: true })
-    .eq('role', 'super_admin')
-    .eq('is_active', true)
-    .neq('id', excludeId);
-  return count || 0;
-}
-
 export async function PATCH(request, { params }) {
   const session = await getAdminSession();
   if (!session) return unauthorized();
@@ -21,9 +11,8 @@ export async function PATCH(request, { params }) {
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
   const wantsActive = typeof body.is_active === 'boolean' ? body.is_active : undefined;
-  const wantsRole = body.role === 'admin' || body.role === 'super_admin' ? body.role : undefined;
 
-  if (wantsActive === undefined && wantsRole === undefined) {
+  if (wantsActive === undefined) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
@@ -37,57 +26,30 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
   }
 
-  const isSelf = id === session.sub;
-  const update = {};
-  const logs = [];
-
-  // --- Deactivate / reactivate ---
-  if (wantsActive !== undefined && wantsActive !== target.is_active) {
-    if (!wantsActive && isSelf) {
-      return NextResponse.json({ error: 'You cannot deactivate your own account' }, { status: 400 });
-    }
-    if (!wantsActive && target.role === 'super_admin' && (await countOtherActiveSuperAdmins(id)) === 0) {
-      return NextResponse.json({ error: 'Cannot deactivate the last active Super Admin' }, { status: 400 });
-    }
-    update.is_active = wantsActive;
-    logs.push({ action: wantsActive ? 'admin.reactivated' : 'admin.deactivated' });
+  if (target.role === 'super_admin') {
+    return NextResponse.json({ error: 'Cannot modify the Super Admin account' }, { status: 400 });
   }
 
-  // --- Change role ---
-  if (wantsRole !== undefined && wantsRole !== target.role) {
-    if (isSelf) {
-      return NextResponse.json({ error: 'You cannot change your own role' }, { status: 400 });
-    }
-    if (wantsRole === 'admin' && target.role === 'super_admin' && (await countOtherActiveSuperAdmins(id)) === 0) {
-      return NextResponse.json({ error: 'Cannot demote the last active Super Admin' }, { status: 400 });
-    }
-    update.role = wantsRole;
-    logs.push({ action: 'admin.role_changed', details: { from: target.role, to: wantsRole } });
-  }
-
-  if (Object.keys(update).length === 0) {
+  if (wantsActive === target.is_active) {
     return NextResponse.json({ error: 'No changes to apply' }, { status: 400 });
   }
 
   const { data: updated, error } = await supabaseAdmin
     .from('admin_accounts')
-    .update(update)
+    .update({ is_active: wantsActive })
     .eq('id', id)
     .select('id, email, name, role, is_active, must_change_password, last_login_at, created_at')
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  for (const log of logs) {
-    await logAudit({
-      actor: session,
-      action: log.action,
-      targetType: 'admin',
-      targetId: target.id,
-      targetLabel: target.email,
-      details: log.details,
-    });
-  }
+  await logAudit({
+    actor: session,
+    action: wantsActive ? 'admin.reactivated' : 'admin.deactivated',
+    targetType: 'admin',
+    targetId: target.id,
+    targetLabel: target.email,
+  });
 
   return NextResponse.json(updated);
 }

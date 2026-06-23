@@ -30,7 +30,6 @@ const ACTION_META = {
   'admin.deactivated': { label: 'Deactivated admin', color: 'error' },
   'admin.reactivated': { label: 'Reactivated admin', color: 'success' },
   'admin.role_changed': { label: 'Changed admin role', color: 'info' },
-  'admin.promoted_to_super': { label: 'Promoted to Super Admin', color: 'warning' },
   'admin.password_reset': { label: 'Reset admin password', color: 'default' },
   'admin.password_changed': { label: 'Changed own password', color: 'default' },
 };
@@ -49,7 +48,7 @@ function describeDetails(action, details) {
     };
     return `${fmtSide(from)}  →  ${fmtSide(to)}`;
   }
-  if (action === 'admin.role_changed' || action === 'admin.promoted_to_super') {
+  if (action === 'admin.role_changed') {
     return `${details.from || '—'} → ${details.to || '—'}`;
   }
   if (action === 'profile.approved' && details.changes) {

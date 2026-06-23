@@ -49,7 +49,7 @@ export default function AdminsPage() {
 
   // add dialog
   const [addOpen, setAddOpen] = useState(false);
-  const [addForm, setAddForm] = useState({ email: '', name: '', password: '', role: 'admin' });
+  const [addForm, setAddForm] = useState({ email: '', name: '', password: '' });
   const [addError, setAddError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -99,18 +99,6 @@ export default function AdminsPage() {
     }
   };
 
-  const promoteToSuperAdmin = async (row) => {
-    closeMenu();
-    const res = await fetch(`/api/admins/${row.id}/promote`, { method: 'POST' });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      setAdmins((prev) => prev.map((a) => (a.id === row.id ? data : a)));
-      showToast(`${row.name} promoted to Super Admin.`);
-    } else {
-      showToast(data.error || 'Promotion failed.', 'error');
-    }
-  };
-
   const submitAdd = async () => {
     setAddError('');
     setSaving(true);
@@ -123,7 +111,7 @@ export default function AdminsPage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setAddOpen(false);
-        setAddForm({ email: '', name: '', password: '', role: 'admin' });
+        setAddForm({ email: '', name: '', password: '' });
         showToast(`Admin "${data.name}" created.`);
         fetchAdmins();
       } else {
@@ -253,18 +241,6 @@ export default function AdminsPage() {
         <MenuItem onClick={() => { setPwTarget(menuRow); setPwValue(''); setPwError(''); closeMenu(); }}>
           Reset password
         </MenuItem>
-        {menuRow?.role === 'admin' ? (
-          <MenuItem disabled={isSelf} onClick={() => promoteToSuperAdmin(menuRow)}>
-            Make Super Admin
-          </MenuItem>
-        ) : (
-          <MenuItem
-            disabled={isSelf}
-            onClick={() => patchAdmin(menuRow, { role: 'admin' }, 'Demoted to Admin.')}
-          >
-            Demote to Admin
-          </MenuItem>
-        )}
         <MenuItem
           disabled={isSelf}
           onClick={() => patchAdmin(
@@ -295,13 +271,6 @@ export default function AdminsPage() {
             value={addForm.password} onChange={(e) => setAddForm((f) => ({ ...f, password: e.target.value }))}
             helperText="At least 8 characters"
           />
-          <TextField
-            select fullWidth label="Role"
-            value={addForm.role} onChange={(e) => setAddForm((f) => ({ ...f, role: e.target.value }))}
-          >
-            <MenuItem value="admin">Admin</MenuItem>
-            <MenuItem value="super_admin">Super Admin</MenuItem>
-          </TextField>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setAddOpen(false)} disabled={saving}>Cancel</Button>
