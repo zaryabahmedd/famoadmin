@@ -20,8 +20,12 @@ import SaveIcon from '@mui/icons-material/Save';
 import PageHeader from '../components/PageHeader';
 import { currency } from '../components/StatusChip';
 
+const SIZES = [5, 10, 15, 20];
+const EXAMPLE_KM = 5;
+
 export default function SettingsPage() {
-  const [pricing, setPricing] = useState({ base_price: '', per_km_price: '' });
+  // Keyed by size: { [size]: { base_price, per_km_price } }.
+  const [pricing, setPricing] = useState({});
   const [pricingLoading, setPricingLoading] = useState(true);
   const [pricingSaving, setPricingSaving] = useState(false);
   const [toast, setToast] = useState('');
@@ -33,7 +37,13 @@ export default function SettingsPage() {
       try {
         const res = await fetch('/api/settings/pricing');
         const data = await res.json();
-        if (active && res.ok) setPricing({ base_price: data.base_price, per_km_price: data.per_km_price });
+        if (active && res.ok) {
+          const next = {};
+          for (const row of data.sizes || []) {
+            next[row.size] = { base_price: row.base_price, per_km_price: row.per_km_price };
+          }
+          setPricing(next);
+        }
       } finally {
         if (active) setPricingLoading(false);
       }
@@ -41,8 +51,8 @@ export default function SettingsPage() {
     return () => { active = false; };
   }, []);
 
-  const updatePricing = (key) => (e) =>
-    setPricing((p) => ({ ...p, [key]: e.target.value }));
+  const updatePricing = (size, key) => (e) =>
+    setPricing((p) => ({ ...p, [size]: { ...p[size], [key]: e.target.value } }));
 
   const savePricing = async () => {
     setPricingSaving(true);
@@ -51,13 +61,20 @@ export default function SettingsPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          base_price: Number(pricing.base_price),
-          per_km_price: Number(pricing.per_km_price),
+          sizes: SIZES.map((size) => ({
+            size,
+            base_price: Number(pricing[size]?.base_price),
+            per_km_price: Number(pricing[size]?.per_km_price),
+          })),
         }),
       });
       const data = await res.json();
       if (res.ok) {
-        setPricing({ base_price: data.base_price, per_km_price: data.per_km_price });
+        const next = {};
+        for (const row of data.sizes || []) {
+          next[row.size] = { base_price: row.base_price, per_km_price: row.per_km_price };
+        }
+        setPricing(next);
         setToast('Pricing saved — riders and users will see the new fares immediately.');
       } else {
         setToast(data.error || 'Failed to save pricing.');
@@ -71,7 +88,7 @@ export default function SettingsPage() {
     <Box>
       <PageHeader
         title="Settings"
-        subtitle="Live pricing controls."
+        subtitle="Live per-package-size pricing controls."
         action={
           <Button
             variant="contained"
@@ -85,41 +102,56 @@ export default function SettingsPage() {
       />
 
       <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card sx={{ maxWidth: { md: 480 } }}>
+        <Grid size={{ xs: 12 }}>
+          <Card sx={{ maxWidth: { md: 980 } }}>
             <CardHeader
-              title="Pricing controls"
-              subheader="Applies instantly across the admin panel, rider app and user app"
+              title="Package pricing"
+              subheader="Set a fare for each package size. Applies instantly across the admin panel, rider app and user app. Fare = base + per-km × distance (set per-km to 0 for a flat fare)."
             />
             <CardContent>
               {pricingLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
               ) : (
-                <Stack spacing={2.5}>
-                  <TextField
-                    label="Base price"
-                    type="number"
-                    value={pricing.base_price}
-                    onChange={updatePricing('base_price')}
-                    InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }}
-                  />
-                  <TextField
-                    label="Per-km price"
-                    type="number"
-                    value={pricing.per_km_price}
-                    onChange={updatePricing('per_km_price')}
-                    InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }}
-                  />
-                  <Divider />
-                  <Box sx={{ bgcolor: '#f8fafc', p: 2, borderRadius: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Example: a 5 km trip costs
-                    </Typography>
-                    <Typography variant="h6">
-                      {currency(Number(pricing.base_price || 0) + Number(pricing.per_km_price || 0) * 5)}
-                    </Typography>
-                  </Box>
-                </Stack>
+                <Grid container spacing={2.5}>
+                  {SIZES.map((size) => {
+                    const row = pricing[size] || {};
+                    const example = Number(row.base_price || 0) + Number(row.per_km_price || 0) * EXAMPLE_KM;
+                    return (
+                      <Grid key={size} size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
+                          <Stack spacing={2}>
+                            <Typography variant="subtitle1" fontWeight={700}>
+                              Size {size}
+                            </Typography>
+                            <TextField
+                              label="Base price"
+                              type="number"
+                              size="small"
+                              value={row.base_price ?? ''}
+                              onChange={updatePricing(size, 'base_price')}
+                              InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }}
+                            />
+                            <TextField
+                              label="Per-km price"
+                              type="number"
+                              size="small"
+                              value={row.per_km_price ?? ''}
+                              onChange={updatePricing(size, 'per_km_price')}
+                              InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }}
+                            />
+                            <Divider />
+                            <Box sx={{ bgcolor: '#f8fafc', p: 1.5, borderRadius: 2 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                A {EXAMPLE_KM} km trip costs
+                              </Typography>
+                              <Typography variant="h6">{currency(example)}</Typography>
+                            </Box>
+                          </Stack>
+                        </Box>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
               )}
             </CardContent>
           </Card>

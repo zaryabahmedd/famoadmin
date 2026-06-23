@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getAdminSession, unauthorized } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -33,12 +35,22 @@ async function killSessions(userId) {
 }
 
 export async function PATCH(request, { params }) {
+  const session = await getAdminSession();
+  if (!session) return unauthorized();
+
   const { id } = await params;
   const { status } = await request.json();
 
   if (!['active', 'blocked'].includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
+
+  // Snapshot for attribution before updating.
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('full_name, email, status')
+    .eq('id', id)
+    .single();
 
   // Step 1 — update public.users (this always works)
   const { error: dbError } = await supabaseAdmin
@@ -66,6 +78,15 @@ export async function PATCH(request, { params }) {
     // Session kill is best-effort — don't fail the whole request if it errors
     if (sessionError) console.error('[block user] session kill error:', sessionError.message);
   }
+
+  await logAudit({
+    actor: session,
+    action: status === 'blocked' ? 'user.blocked' : 'user.unblocked',
+    targetType: 'user',
+    targetId: id,
+    targetLabel: user?.full_name || user?.email || null,
+    details: { from: user?.status || null, to: status },
+  });
 
   return NextResponse.json({ success: true });
 }

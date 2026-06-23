@@ -13,6 +13,7 @@ import Alert from '@mui/material/Alert';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,12 +27,12 @@ function LoginForm() {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Incorrect password');
+        setError(data.error || 'Incorrect email or password');
         return;
       }
 
@@ -66,7 +67,7 @@ function LoginForm() {
             Famo Admin
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Enter the admin password to continue.
+            Sign in with your admin email and password.
           </Typography>
 
           {error && (
@@ -78,11 +79,21 @@ function LoginForm() {
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
               fullWidth
+              type="email"
+              label="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoFocus
+              autoComplete="username"
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
               type="password"
               label="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoFocus
+              autoComplete="current-password"
               sx={{ mb: 2 }}
             />
             <Button
@@ -90,7 +101,7 @@ function LoginForm() {
               type="submit"
               variant="contained"
               size="large"
-              disabled={loading || !password}
+              disabled={loading || !email || !password}
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -18,6 +18,14 @@ import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
@@ -30,27 +38,69 @@ import PaidIcon from '@mui/icons-material/Paid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import HistoryIcon from '@mui/icons-material/History';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import Tooltip from '@mui/material/Tooltip';
 
 const drawerWidth = 256;
 
-const navItems = [
+// Visible to every admin (operational features).
+const baseNavItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { label: 'Users', icon: <PeopleIcon />, path: '/users' },
+  { label: 'Approvals', icon: <HowToRegIcon />, path: '/approvals' },
   { label: 'Drivers', icon: <TwoWheelerIcon />, path: '/drivers' },
   { label: 'All Orders', icon: <ReceiptLongIcon />, path: '/orders' },
   { label: 'Revenue', icon: <PaidIcon />, path: '/revenue' },
-  { label: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
+
+// Super Admin only: pricing config, admin management and audit logs.
+const superAdminNavItems = [
+  { label: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+  { label: 'Admins', icon: <AdminPanelSettingsIcon />, path: '/admins' },
+  { label: 'Logs', icon: <HistoryIcon />, path: '/logs' },
+];
+
+const ROLE_LABEL = { super_admin: 'Super Admin', admin: 'Admin' };
+
+function initials(name) {
+  return (name || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+}
 
 export default function DashboardLayout({ children }) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [trackInput, setTrackInput] = useState('');
+  const [me, setMe] = useState(null);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [toast, setToast] = useState('');
   const pathname = usePathname();
   const router = useRouter();
   const navigate = (href) => router.push(href);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/me');
+        if (active && res.ok) setMe(await res.json());
+      } catch {
+        /* ignore — middleware will redirect if the session is gone */
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  const navItems = useMemo(
+    () => (me?.role === 'super_admin' ? [...baseNavItems, ...superAdminNavItems] : baseNavItems),
+    [me?.role]
+  );
 
   const handleTrackSubmit = (e) => {
     e.preventDefault();
@@ -78,6 +128,45 @@ export default function DashboardLayout({ children }) {
     await fetch('/api/logout', { method: 'POST' });
     router.push('/login');
     router.refresh();
+  };
+
+  const openPwDialog = () => {
+    setPwForm({ currentPassword: '', newPassword: '', confirm: '' });
+    setPwError('');
+    setPwOpen(true);
+  };
+
+  const submitPasswordChange = async () => {
+    setPwError('');
+    if (pwForm.newPassword.length < 8) {
+      setPwError('New password must be at least 8 characters.');
+      return;
+    }
+    if (pwForm.newPassword !== pwForm.confirm) {
+      setPwError('New password and confirmation do not match.');
+      return;
+    }
+    setPwSaving(true);
+    try {
+      const res = await fetch('/api/me/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: pwForm.currentPassword,
+          newPassword: pwForm.newPassword,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setPwOpen(false);
+        setMe((m) => (m ? { ...m, mustChangePassword: false } : m));
+        setToast('Password updated.');
+      } else {
+        setPwError(data.error || 'Could not update password.');
+      }
+    } finally {
+      setPwSaving(false);
+    }
   };
 
   const drawer = (
@@ -146,15 +235,22 @@ export default function DashboardLayout({ children }) {
       </List>
       <Divider />
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar src="https://randomuser.me/api/portraits/men/32.jpg" />
+        <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40, fontSize: 15 }}>
+          {initials(me?.name)}
+        </Avatar>
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-            Alex Doyle
+            {me?.name || '—'}
           </Typography>
           <Typography variant="caption" color="text.secondary" noWrap>
-            Super admin
+            {ROLE_LABEL[me?.role] || ''}
           </Typography>
         </Box>
+        <Tooltip title="Change password">
+          <IconButton onClick={openPwDialog} size="small">
+            <VpnKeyIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Log out">
           <IconButton onClick={handleLogout} size="small">
             <LogoutIcon fontSize="small" />
@@ -191,7 +287,9 @@ export default function DashboardLayout({ children }) {
           <Typography variant="h6" noWrap sx={{ flexGrow: 1, fontWeight: 700 }}>
             {navItems.find((i) => i.path === activePath)?.label || 'Dashboard'}
           </Typography>
-          <Avatar src="https://randomuser.me/api/portraits/men/32.jpg" sx={{ ml: 1.5, width: 36, height: 36 }} />
+          <Avatar sx={{ ml: 1.5, width: 36, height: 36, bgcolor: 'primary.main', fontSize: 14 }}>
+            {initials(me?.name)}
+          </Avatar>
         </Toolbar>
       </AppBar>
 
@@ -233,8 +331,72 @@ export default function DashboardLayout({ children }) {
         }}
       >
         <Toolbar />
+        {me?.mustChangePassword && (
+          <Alert
+            severity="warning"
+            sx={{ mb: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={openPwDialog}>
+                Change password
+              </Button>
+            }
+          >
+            You&apos;re still using the default password. Please set a new one.
+          </Alert>
+        )}
         {children}
       </Box>
+
+      <Dialog open={pwOpen} onClose={() => !pwSaving && setPwOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Change password</DialogTitle>
+        <DialogContent>
+          {pwError && <Alert severity="error" sx={{ mb: 2 }}>{pwError}</Alert>}
+          <TextField
+            fullWidth
+            type="password"
+            label="Current password"
+            autoComplete="current-password"
+            value={pwForm.currentPassword}
+            onChange={(e) => setPwForm((f) => ({ ...f, currentPassword: e.target.value }))}
+            sx={{ mt: 1, mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            type="password"
+            label="New password"
+            autoComplete="new-password"
+            value={pwForm.newPassword}
+            onChange={(e) => setPwForm((f) => ({ ...f, newPassword: e.target.value }))}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            type="password"
+            label="Confirm new password"
+            autoComplete="new-password"
+            value={pwForm.confirm}
+            onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setPwOpen(false)} disabled={pwSaving}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={submitPasswordChange}
+            disabled={pwSaving || !pwForm.currentPassword || !pwForm.newPassword || !pwForm.confirm}
+          >
+            {pwSaving ? <CircularProgress size={18} color="inherit" /> : 'Update'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={3000}
+        onClose={() => setToast('')}
+        message={toast}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 }

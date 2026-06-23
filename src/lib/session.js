@@ -9,6 +9,11 @@ function toBase64Url(bytes) {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+function fromBase64Url(str) {
+  const padded = str.replace(/-/g, '+').replace(/_/g, '/');
+  return atob(padded);
+}
+
 async function getKey(secret) {
   return crypto.subtle.importKey(
     'raw',
@@ -28,31 +33,56 @@ function timingSafeEqual(a, b) {
   return result === 0;
 }
 
-export async function createSessionToken() {
+async function signPayload(payload) {
   const secret = process.env.ADMIN_SESSION_SECRET;
-  const expires = Date.now() + SESSION_TTL_MS;
-  const payload = `${expires}`;
   const key = await getKey(secret);
   const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
-  const sig = toBase64Url(new Uint8Array(signature));
+  return toBase64Url(new Uint8Array(signature));
+}
+
+/**
+ * Create a signed session token carrying the admin's identity and role.
+ * @param {{ id: string, role: string, name?: string, email?: string }} admin
+ */
+export async function createSessionToken(admin) {
+  const exp = Date.now() + SESSION_TTL_MS;
+  const claims = {
+    sub: admin.id,
+    role: admin.role,
+    name: admin.name || '',
+    email: admin.email || '',
+    exp,
+  };
+  const payload = toBase64Url(encoder.encode(JSON.stringify(claims)));
+  const sig = await signPayload(payload);
   return `${payload}.${sig}`;
 }
 
+/**
+ * Verify a session token and return its decoded claims, or null if invalid/expired.
+ * @returns {Promise<null | { sub: string, role: string, name: string, email: string, exp: number }>}
+ */
 export async function verifySessionToken(token) {
   const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!token || !secret) return false;
+  if (!token || !secret) return null;
 
   const [payload, sig] = token.split('.');
-  if (!payload || !sig) return false;
+  if (!payload || !sig) return null;
 
-  const expires = Number(payload);
-  if (!Number.isFinite(expires) || Date.now() > expires) return false;
+  const expectedSig = await signPayload(payload);
+  if (!timingSafeEqual(sig, expectedSig)) return null;
 
-  const key = await getKey(secret);
-  const expectedSignature = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
-  const expectedSig = toBase64Url(new Uint8Array(expectedSignature));
+  let claims;
+  try {
+    claims = JSON.parse(fromBase64Url(payload));
+  } catch {
+    return null;
+  }
 
-  return timingSafeEqual(sig, expectedSig);
+  if (!claims || typeof claims.exp !== 'number' || Date.now() > claims.exp) return null;
+  if (!claims.sub || !claims.role) return null;
+
+  return claims;
 }
 
 export { SESSION_COOKIE, SESSION_TTL_MS };
