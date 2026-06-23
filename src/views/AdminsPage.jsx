@@ -99,6 +99,18 @@ export default function AdminsPage() {
     }
   };
 
+  const promoteToSuperAdmin = async (row) => {
+    closeMenu();
+    const res = await fetch(`/api/admins/${row.id}/promote`, { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setAdmins((prev) => prev.map((a) => (a.id === row.id ? data : a)));
+      showToast(`${row.name} promoted to Super Admin.`);
+    } else {
+      showToast(data.error || 'Promotion failed.', 'error');
+    }
+  };
+
   const submitAdd = async () => {
     setAddError('');
     setSaving(true);
@@ -241,16 +253,18 @@ export default function AdminsPage() {
         <MenuItem onClick={() => { setPwTarget(menuRow); setPwValue(''); setPwError(''); closeMenu(); }}>
           Reset password
         </MenuItem>
-        <MenuItem
-          disabled={isSelf}
-          onClick={() => patchAdmin(
-            menuRow,
-            { role: menuRow.role === 'super_admin' ? 'admin' : 'super_admin' },
-            'Role updated.',
-          )}
-        >
-          {menuRow?.role === 'super_admin' ? 'Make Admin' : 'Make Super Admin'}
-        </MenuItem>
+        {menuRow?.role === 'admin' ? (
+          <MenuItem disabled={isSelf} onClick={() => promoteToSuperAdmin(menuRow)}>
+            Make Super Admin
+          </MenuItem>
+        ) : (
+          <MenuItem
+            disabled={isSelf}
+            onClick={() => patchAdmin(menuRow, { role: 'admin' }, 'Demoted to Admin.')}
+          >
+            Demote to Admin
+          </MenuItem>
+        )}
         <MenuItem
           disabled={isSelf}
           onClick={() => patchAdmin(

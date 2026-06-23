@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 const FILTER_PREFIX = {
   rider: 'rider.',
   user: 'user.',
+  profile: 'profile.',
   pricing: 'pricing.',
   admin: 'admin.',
 };

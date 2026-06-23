@@ -14,7 +14,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import PageHeader from '../components/PageHeader';
 import { currency } from '../components/StatusChip';
 
-const TAB_FILTERS = ['', 'rider', 'user', 'pricing', 'admin'];
+const TAB_FILTERS = ['', 'rider', 'user', 'profile', 'pricing', 'admin'];
 
 const ACTION_META = {
   'rider.approved': { label: 'Approved rider', color: 'success' },
@@ -23,11 +23,14 @@ const ACTION_META = {
   'rider.status_changed': { label: 'Changed rider status', color: 'default' },
   'user.blocked': { label: 'Blocked user', color: 'error' },
   'user.unblocked': { label: 'Unblocked user', color: 'success' },
+  'profile.approved': { label: 'Approved profile change', color: 'success' },
+  'profile.rejected': { label: 'Rejected profile change', color: 'error' },
   'pricing.updated': { label: 'Updated pricing', color: 'warning' },
   'admin.created': { label: 'Created admin', color: 'info' },
   'admin.deactivated': { label: 'Deactivated admin', color: 'error' },
   'admin.reactivated': { label: 'Reactivated admin', color: 'success' },
   'admin.role_changed': { label: 'Changed admin role', color: 'info' },
+  'admin.promoted_to_super': { label: 'Promoted to Super Admin', color: 'warning' },
   'admin.password_reset': { label: 'Reset admin password', color: 'default' },
   'admin.password_changed': { label: 'Changed own password', color: 'default' },
 };
@@ -46,8 +49,11 @@ function describeDetails(action, details) {
     };
     return `${fmtSide(from)}  →  ${fmtSide(to)}`;
   }
-  if (action === 'admin.role_changed') {
+  if (action === 'admin.role_changed' || action === 'admin.promoted_to_super') {
     return `${details.from || '—'} → ${details.to || '—'}`;
+  }
+  if (action === 'profile.approved' && details.changes) {
+    return details.changes.join('  ·  ');
   }
   const parts = [];
   if (details.to) parts.push(`→ ${details.to}`);
@@ -148,6 +154,7 @@ export default function AuditLogsPage() {
           <Tab label="All" />
           <Tab label="Riders" />
           <Tab label="Users" />
+          <Tab label="Profile" />
           <Tab label="Pricing" />
           <Tab label="Admins" />
         </Tabs>
