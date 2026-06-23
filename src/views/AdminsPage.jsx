@@ -267,7 +267,7 @@ export default function AdminsPage() {
             value={addForm.email} onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
           />
           <TextField
-            fullWidth type="password" label="Temporary password" autoComplete="new-password" sx={{ mb: 2 }}
+            fullWidth type="password" label="Password" autoComplete="new-password" sx={{ mb: 2 }}
             value={addForm.password} onChange={(e) => setAddForm((f) => ({ ...f, password: e.target.value }))}
             helperText="At least 8 characters"
           />
