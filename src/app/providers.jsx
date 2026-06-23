@@ -7,7 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import theme from '../theme';
 import DashboardLayout from '../layout/DashboardLayout';
 
-export default function Providers({ children }) {
+export default function Providers({ children, initialMe }) {
   const pathname = usePathname();
   const isLoginPage = pathname?.startsWith('/login');
 
@@ -15,7 +15,7 @@ export default function Providers({ children }) {
     <AppRouterCacheProvider options={{ key: 'mui' }}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        {isLoginPage ? children : <DashboardLayout>{children}</DashboardLayout>}
+        {isLoginPage ? children : <DashboardLayout initialMe={initialMe}>{children}</DashboardLayout>}
       </ThemeProvider>
     </AppRouterCacheProvider>
   );

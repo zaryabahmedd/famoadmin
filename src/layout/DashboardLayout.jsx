@@ -69,12 +69,12 @@ function initials(name) {
   return (name || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout({ children, initialMe = null }) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [trackInput, setTrackInput] = useState('');
-  const [me, setMe] = useState(null);
+  const [me, setMe] = useState(initialMe);
   const [pwOpen, setPwOpen] = useState(false);
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
   const [pwSaving, setPwSaving] = useState(false);
