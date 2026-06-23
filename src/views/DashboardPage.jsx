@@ -23,6 +23,8 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -50,9 +52,10 @@ function initials(name) {
 }
 
 function shortCurrency(val) {
+  if (val === 0) return '₦0';
   if (val >= 1_000_000) return `₦${(val / 1_000_000).toFixed(1)}M`;
   if (val >= 1_000) return `₦${(val / 1_000).toFixed(0)}K`;
-  return currency(val);
+  return `₦${val.toLocaleString()}`;
 }
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -194,12 +197,32 @@ export default function DashboardPage() {
               <Typography variant="h5" sx={{ fontWeight: 800 }}>{currency(totalRevenue)}</Typography>
             </Box>
             <CardContent sx={{ pt: 1, pb: '16px !important' }}>
-              {revenueByMonth.length > 0 ? (
+              {revenueByMonth.length === 0 ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280, color: 'text.secondary' }}>
+                  <Typography>No delivered orders yet — revenue chart will appear here.</Typography>
+                </Box>
+              ) : revenueByMonth.length <= 2 ? (
                 <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart data={revenueByMonth} margin={{ left: 10, right: 10, top: 10, bottom: 0 }}>
+                  <BarChart data={revenueByMonth} margin={{ left: 10, right: 30, top: 10, bottom: 0 }} barSize={revenueByMonth.length === 1 ? 80 : 56}>
+                    <defs>
+                      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4f46e5" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#818cf8" stopOpacity={0.8} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                    <YAxis tickLine={false} axisLine={false} tickFormatter={shortCurrency} tick={{ fontSize: 12, fill: '#94a3b8' }} width={65} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(79,70,229,0.04)' }} />
+                    <Bar dataKey="revenue" fill="url(#barGrad)" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={revenueByMonth} margin={{ left: 10, right: 30, top: 10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.2} />
+                        <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.15} />
                         <stop offset="100%" stopColor="#4f46e5" stopOpacity={0} />
                       </linearGradient>
                     </defs>
@@ -218,10 +241,6 @@ export default function DashboardPage() {
                     />
                   </AreaChart>
                 </ResponsiveContainer>
-              ) : (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280, color: 'text.secondary' }}>
-                  <Typography>No delivered orders yet — revenue chart will appear here.</Typography>
-                </Box>
               )}
             </CardContent>
           </Card>
