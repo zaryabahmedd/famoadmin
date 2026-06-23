@@ -2,40 +2,55 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Avatar from '@mui/material/Avatar';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 
-export default function StatCard({ title, value, icon, color = 'primary.main', trend }) {
-  const trendUp = trend != null && trend >= 0;
+export default function StatCard({ title, value, icon, color = 'primary.main', subtitle }) {
   return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+    <Card
+      sx={{
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'box-shadow .2s, transform .2s',
+        '&:hover': { boxShadow: '0 4px 24px 0 rgba(0,0,0,.06)', transform: 'translateY(-2px)' },
+      }}
+    >
+      <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography
+              variant="overline"
+              sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.7rem', letterSpacing: '.08em', lineHeight: 1 }}
+            >
               {title}
             </Typography>
-            <Typography variant="h4">{value}</Typography>
-          </Box>
-          <Avatar sx={{ bgcolor: color, width: 48, height: 48 }}>{icon}</Avatar>
-        </Box>
-        {trend != null && (
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5, gap: 0.5 }}>
-            {trendUp ? (
-              <TrendingUpIcon fontSize="small" color="success" />
-            ) : (
-              <TrendingDownIcon fontSize="small" color="error" />
+            <Typography variant="h4" sx={{ mt: 1, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+              {value}
+            </Typography>
+            {subtitle && (
+              <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                {subtitle}
+              </Typography>
             )}
-            <Typography variant="body2" sx={{ color: trendUp ? 'success.main' : 'error.main', fontWeight: 600 }}>
-              {trendUp ? '+' : ''}
-              {trend}%
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              vs last month
-            </Typography>
           </Box>
-        )}
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: color,
+              color: '#fff',
+              flexShrink: 0,
+              ml: 1.5,
+              opacity: 0.9,
+              '& .MuiSvgIcon-root': { fontSize: 22 },
+            }}
+          >
+            {icon}
+          </Box>
+        </Box>
       </CardContent>
     </Card>
   );
