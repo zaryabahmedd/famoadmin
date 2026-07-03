@@ -45,7 +45,7 @@ import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import { currency } from '../components/StatusChip';
 
-const PLATFORM_CUT = 0.10;
+const DRIVER_SHARE = 0.30; // drivers earn 30% of each completed job — Famo keeps the remaining 70%
 
 function initials(name) {
   return (name || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -137,12 +137,13 @@ export default function DashboardPage() {
       byRider.set(o.rider.id, entry);
     }
     return [...byRider.values()]
-      .map((r) => ({ ...r, net: r.gross * (1 - PLATFORM_CUT) }))
+      .map((r) => ({ ...r, net: r.gross * DRIVER_SHARE }))
       .sort((a, b) => b.gross - a.gross);
   }, [deliveredOrders]);
 
   const overallGross = riderEarnings.reduce((s, r) => s + r.gross, 0);
-  const overallNet = overallGross * (1 - PLATFORM_CUT);
+  const totalDriverPayouts = riderEarnings.reduce((s, r) => s + r.net, 0);
+  const companyEarnings = totalRevenue - totalDriverPayouts;
 
   if (loading) {
     return (
@@ -302,9 +303,9 @@ export default function DashboardPage() {
       <Box sx={{ mt: 4, mb: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Box sx={{ width: 4, height: 24, borderRadius: 2, bgcolor: 'primary.main' }} />
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>Rider Earnings</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>Earnings</Typography>
           <Typography variant="caption" color="text.secondary">
-            Famo retains 10% platform fee — riders keep 90%
+            Drivers earn 30% of each completed job — Famo keeps 70%
           </Typography>
         </Box>
       </Box>
@@ -314,13 +315,13 @@ export default function DashboardPage() {
           <StatCard title="Total deliveries" value={deliveredOrders.length} icon={<LocalShippingIcon />} color="primary.main" />
         </Grid>
         <Grid size={{ xs: 6, sm: 6, lg: 3 }}>
-          <StatCard title="Gross earnings" value={currency(overallGross)} icon={<AccountBalanceWalletIcon />} color="#4f46e5" />
+          <StatCard title="Total revenue" value={currency(totalRevenue)} icon={<AccountBalanceWalletIcon />} color="#4f46e5" />
         </Grid>
         <Grid size={{ xs: 6, sm: 6, lg: 3 }}>
-          <StatCard title="Platform fee (10%)" value={currency(overallGross - overallNet)} icon={<PercentIcon />} color="warning.main" />
+          <StatCard title="Driver payouts (30%)" value={currency(totalDriverPayouts)} icon={<PaidIcon />} color="success.main" />
         </Grid>
         <Grid size={{ xs: 6, sm: 6, lg: 3 }}>
-          <StatCard title="Rider payouts" value={currency(overallNet)} icon={<PaidIcon />} color="success.main" />
+          <StatCard title="Company earnings (70%)" value={currency(companyEarnings)} icon={<PercentIcon />} color="warning.main" />
         </Grid>
 
         <Grid size={{ xs: 12 }}>
@@ -345,7 +346,7 @@ export default function DashboardPage() {
                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Rider</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Orders</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Gross</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Net (90%)</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Driver earnings (30%)</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '.05em', width: 140 }}>Share</TableCell>
                       </TableRow>
                     </TableHead>
@@ -412,7 +413,7 @@ export default function DashboardPage() {
                           {riderEarnings.reduce((s, r) => s + r.completedOrders, 0).toLocaleString()}
                         </TableCell>
                         <TableCell align="right" sx={{ fontWeight: 700 }}>{currency(overallGross)}</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{currency(overallNet)}</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{currency(totalDriverPayouts)}</TableCell>
                         <TableCell />
                       </TableRow>
                     </TableBody>

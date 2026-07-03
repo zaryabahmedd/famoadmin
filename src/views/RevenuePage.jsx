@@ -24,7 +24,7 @@ import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import { currency } from '../components/StatusChip';
 
-const PLATFORM_CUT = 0.10; // Famo keeps 10% of every completed delivery
+const DRIVER_SHARE = 0.30; // drivers earn 30% of each completed job — Famo keeps the remaining 70%
 
 function initials(name) {
   return (name || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -66,12 +66,14 @@ export default function RevenuePage() {
       byRider.set(o.rider.id, entry);
     }
     return [...byRider.values()]
-      .map((r) => ({ ...r, net: r.gross * (1 - PLATFORM_CUT) }))
+      .map((r) => ({ ...r, net: r.gross * DRIVER_SHARE }))
       .sort((a, b) => b.gross - a.gross);
   }, [deliveredOrders]);
 
+  const totalRevenue = deliveredOrders.reduce((s, o) => s + (Number(o.price) || 0), 0);
   const overallGross = riderEarnings.reduce((s, r) => s + r.gross, 0);
-  const overallNet = overallGross * (1 - PLATFORM_CUT);
+  const totalDriverPayouts = riderEarnings.reduce((s, r) => s + r.net, 0);
+  const companyEarnings = totalRevenue - totalDriverPayouts;
 
   return (
     <Box>
@@ -81,27 +83,35 @@ export default function RevenuePage() {
         {/* Rider earnings */}
         <Grid size={{ xs: 12 }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mt: 1, mb: -0.5 }}>
-            Rider Earnings
+            Earnings
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Based on completed (delivered) orders. Famo retains a 10% platform fee — riders keep the remaining 90%.
+            Based on completed (delivered) orders. Drivers earn 30% of each completed job — Famo keeps the remaining 70%.
           </Typography>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <StatCard
-            title="Overall rider earnings (gross)"
-            value={earningsLoading ? '…' : currency(overallGross)}
+            title="Total revenue"
+            value={earningsLoading ? '…' : currency(totalRevenue)}
             icon={<AccountBalanceWalletIcon />}
             color="primary.main"
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <StatCard
-            title="Overall after 10% platform fee (net)"
-            value={earningsLoading ? '…' : currency(overallNet)}
+            title="Driver payouts (30%)"
+            value={earningsLoading ? '…' : currency(totalDriverPayouts)}
             icon={<PercentIcon />}
             color="success.main"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <StatCard
+            title="Company earnings (70%)"
+            value={earningsLoading ? '…' : currency(companyEarnings)}
+            icon={<AccountBalanceWalletIcon />}
+            color="warning.main"
           />
         </Grid>
 
@@ -125,8 +135,8 @@ export default function RevenuePage() {
                     <TableRow sx={{ '& th': { fontWeight: 700 } }}>
                       <TableCell>Rider</TableCell>
                       <TableCell align="right">Completed orders</TableCell>
-                      <TableCell align="right">Gross earnings</TableCell>
-                      <TableCell align="right">Net earnings (after 10%)</TableCell>
+                      <TableCell align="right">Job value (gross)</TableCell>
+                      <TableCell align="right">Driver earnings (30%)</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -159,7 +169,7 @@ export default function RevenuePage() {
                           {riderEarnings.reduce((s, r) => s + r.completedOrders, 0).toLocaleString()}
                         </TableCell>
                         <TableCell align="right">{currency(overallGross)}</TableCell>
-                        <TableCell align="right" sx={{ color: 'success.main' }}>{currency(overallNet)}</TableCell>
+                        <TableCell align="right" sx={{ color: 'success.main' }}>{currency(totalDriverPayouts)}</TableCell>
                       </TableRow>
                     </TableBody>
                   )}

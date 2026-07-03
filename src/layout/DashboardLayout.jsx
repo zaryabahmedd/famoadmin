@@ -41,6 +41,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import HistoryIcon from '@mui/icons-material/History';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import Tooltip from '@mui/material/Tooltip';
 
@@ -54,6 +55,7 @@ const baseNavItems = [
   { label: 'Drivers', icon: <TwoWheelerIcon />, path: '/drivers' },
   { label: 'All Orders', icon: <ReceiptLongIcon />, path: '/orders' },
   { label: 'Revenue', icon: <PaidIcon />, path: '/revenue' },
+  { label: 'Cash-Outs', icon: <AccountBalanceWalletIcon />, path: '/cashouts' },
 ];
 
 // Super Admin only: pricing config, admin management and audit logs.
