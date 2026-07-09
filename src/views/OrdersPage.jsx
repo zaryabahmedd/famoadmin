@@ -24,14 +24,20 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
-import PlaceIcon from '@mui/icons-material/Place';
-import FlagIcon from '@mui/icons-material/Flag';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import ScaleIcon from '@mui/icons-material/Scale';
-import PaidIcon from '@mui/icons-material/Paid';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import PhoneIcon from '@mui/icons-material/Phone';
 import NotesIcon from '@mui/icons-material/Notes';
+import EmailIcon from '@mui/icons-material/Email';
+import CategoryIcon from '@mui/icons-material/Category';
+import StraightenIcon from '@mui/icons-material/Straighten';
+import DescriptionIcon from '@mui/icons-material/Description';
+import CallReceivedIcon from '@mui/icons-material/CallReceived';
+import CallMadeIcon from '@mui/icons-material/CallMade';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import UpdateIcon from '@mui/icons-material/Update';
 
 import PageHeader from '../components/PageHeader';
 import StatusChip, { currency } from '../components/StatusChip';
@@ -48,28 +54,107 @@ function fmtDate(v) {
   return v ? new Date(v).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 }
 
-function InfoRow({ icon, label, value }) {
-  if (!value) return null;
+/* A titled, bordered card that groups related fields in the detail drawer. */
+function Section({ icon, title, action, children }) {
   return (
-    <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ py: 0.5 }}>
-      <Box sx={{ color: 'text.disabled', mt: 0.25 }}>{icon}</Box>
-      <Box sx={{ minWidth: 0 }}>
+    <Box
+      sx={{
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2,
+        overflow: 'hidden',
+        bgcolor: 'background.paper',
+      }}
+    >
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        sx={{ px: 1.75, py: 1.25, bgcolor: '#f8fafc', borderBottom: '1px solid', borderColor: 'divider' }}
+      >
+        <Box sx={{ display: 'flex', color: 'text.secondary' }}>{icon}</Box>
+        <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: 'text.secondary', flex: 1 }}>
+          {title}
+        </Typography>
+        {action}
+      </Stack>
+      <Box sx={{ px: 1.75, py: 1.25 }}>{children}</Box>
+    </Box>
+  );
+}
+
+/* A single label/value line with a leading icon. Hidden when value is empty. */
+function Field({ icon, label, value, mono, strong, color }) {
+  if (value == null || value === '') return null;
+  return (
+    <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ py: 0.6 }}>
+      <Box sx={{ color: 'text.disabled', mt: 0.3, display: 'flex' }}>{icon}</Box>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>{label}</Typography>
-        <Typography variant="body2" sx={{ fontWeight: 500, wordBreak: 'break-word' }}>{value}</Typography>
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: strong ? 700 : 500,
+            wordBreak: 'break-word',
+            color: color || 'text.primary',
+            fontFamily: mono ? 'ui-monospace, SFMono-Regular, Menlo, monospace' : undefined,
+          }}
+        >
+          {value}
+        </Typography>
       </Box>
     </Stack>
   );
 }
 
-function SectionLabel({ children }) {
+/* Name + tappable phone, used for sender / recipient. */
+function Contact({ label, name, phone }) {
+  if (!name && !phone) return null;
   return (
-    <Typography
-      variant="overline"
-      color="text.secondary"
-      sx={{ fontWeight: 700, letterSpacing: 0.8, display: 'block', mt: 2.5, mb: 1 }}
-    >
-      {children}
-    </Typography>
+    <Box sx={{ py: 0.6 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>{label}</Typography>
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>{name || '—'}</Typography>
+      {phone && (
+        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.25 }}>
+          <PhoneIcon sx={{ fontSize: 13, color: 'text.disabled' }} />
+          <Typography
+            component="a"
+            href={`tel:${phone}`}
+            variant="caption"
+            sx={{ color: 'primary.main', textDecoration: 'none', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
+          >
+            {phone}
+          </Typography>
+        </Stack>
+      )}
+    </Box>
+  );
+}
+
+/* Pickup → drop-off as a connected timeline. */
+function RouteTimeline({ pickup, pickupNotes, dropoff, dropoffNotes }) {
+  const Stop = ({ color, kind, address, notes, isLast }) => (
+    <Stack direction="row" spacing={1.5} alignItems="stretch">
+      <Stack alignItems="center" sx={{ width: 16 }}>
+        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: color, mt: 0.4, flexShrink: 0, boxShadow: `0 0 0 3px ${color}22` }} />
+        {!isLast && <Box sx={{ width: 2, flex: 1, bgcolor: 'divider', my: 0.5 }} />}
+      </Stack>
+      <Box sx={{ pb: isLast ? 0 : 2, minWidth: 0, flex: 1 }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, color, letterSpacing: 0.4 }}>{kind}</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 500, wordBreak: 'break-word' }}>{address || '—'}</Typography>
+        {notes && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontStyle: 'italic' }}>
+            “{notes}”
+          </Typography>
+        )}
+      </Box>
+    </Stack>
+  );
+  return (
+    <Box>
+      <Stop color="#16a34a" kind="PICKUP" address={pickup} notes={pickupNotes} />
+      <Stop color="#dc2626" kind="DROP-OFF" address={dropoff} notes={dropoffNotes} isLast />
+    </Box>
   );
 }
 
@@ -308,62 +393,127 @@ export default function OrdersPage() {
         {drawer && (
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             {/* Header */}
-            <Box sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }} noWrap>
-                  Order {orderCode(drawer.id)}
-                </Typography>
-                <StatusChip status={drawer.status} />
-              </Box>
-              <IconButton onClick={() => setDrawer(null)} size="small">
-                <CloseIcon />
-              </IconButton>
+            <Box sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Stack direction="row" alignItems="flex-start" spacing={2}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 0.8, lineHeight: 1 }}>
+                    Order
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }} noWrap>
+                    {orderCode(drawer.id)}
+                  </Typography>
+                  <Box sx={{ mt: 1 }}><StatusChip status={drawer.status} /></Box>
+                </Box>
+                <IconButton onClick={() => setDrawer(null)} size="small">
+                  <CloseIcon />
+                </IconButton>
+              </Stack>
+
+              {/* Price + placed date highlight */}
+              <Stack
+                direction="row"
+                sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}
+              >
+                <Box sx={{ flex: 1, p: 1.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Price</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: 'success.main', lineHeight: 1.2 }}>
+                    {drawer.price != null ? currency(drawer.price) : '—'}
+                  </Typography>
+                </Box>
+                <Divider orientation="vertical" flexItem />
+                <Box sx={{ flex: 1, p: 1.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Placed</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3, mt: 0.25 }}>
+                    {fmtDate(drawer.created_at)}
+                  </Typography>
+                </Box>
+              </Stack>
             </Box>
 
             {/* Scrollable body */}
-            <Box sx={{ flex: 1, overflowY: 'auto', px: 2.5, pb: 3 }}>
+            <Stack spacing={2} sx={{ flex: 1, overflowY: 'auto', p: 2.5, bgcolor: '#fafbfc' }}>
 
-              <SectionLabel>Customer</SectionLabel>
-              <InfoRow icon={<PersonIcon fontSize="small" />} label="Name" value={drawer.user?.full_name} />
-              <InfoRow icon={<PhoneIcon fontSize="small" />} label="Phone" value={drawer.user?.phone_number} />
-              <InfoRow icon={<Box />} label="Email" value={drawer.user?.email} />
+              <Section icon={<PersonIcon fontSize="small" />} title="Customer">
+                <Field icon={<PersonIcon fontSize="small" />} label="Name" value={drawer.user?.full_name} strong />
+                <Field
+                  icon={<PhoneIcon fontSize="small" />}
+                  label="Phone"
+                  value={drawer.user?.phone_number && (
+                    <Box component="a" href={`tel:${drawer.user.phone_number}`} sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                      {drawer.user.phone_number}
+                    </Box>
+                  )}
+                />
+                <Field icon={<EmailIcon fontSize="small" />} label="Email" value={drawer.user?.email} />
+              </Section>
 
-              <SectionLabel>Rider</SectionLabel>
-              {drawer.rider?.full_name ? (
-                <>
-                  <InfoRow icon={<TwoWheelerIcon fontSize="small" />} label="Name" value={drawer.rider?.full_name} />
-                  <InfoRow icon={<PhoneIcon fontSize="small" />} label="Phone" value={drawer.rider?.phone_number} />
-                  <InfoRow icon={<Box />} label="Vehicle" value={[drawer.rider?.vehicle_type, drawer.rider?.vehicle_plate].filter(Boolean).join(' · ')} />
-                </>
-              ) : (
-                <Typography variant="body2" color="text.disabled" sx={{ py: 0.5 }}>No rider assigned yet</Typography>
+              <Section icon={<TwoWheelerIcon fontSize="small" />} title="Rider">
+                {drawer.rider?.full_name ? (
+                  <>
+                    <Field icon={<PersonIcon fontSize="small" />} label="Name" value={drawer.rider?.full_name} strong />
+                    <Field
+                      icon={<PhoneIcon fontSize="small" />}
+                      label="Phone"
+                      value={drawer.rider?.phone_number && (
+                        <Box component="a" href={`tel:${drawer.rider.phone_number}`} sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                          {drawer.rider.phone_number}
+                        </Box>
+                      )}
+                    />
+                    <Field icon={<TwoWheelerIcon fontSize="small" />} label="Vehicle" value={[drawer.rider?.vehicle_type, drawer.rider?.vehicle_plate].filter(Boolean).join(' · ')} />
+                  </>
+                ) : (
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ py: 0.5, color: 'text.disabled' }}>
+                    <EventBusyIcon fontSize="small" />
+                    <Typography variant="body2">No rider assigned yet</Typography>
+                  </Stack>
+                )}
+              </Section>
+
+              <Section icon={<CallMadeIcon fontSize="small" />} title="Route">
+                <RouteTimeline
+                  pickup={drawer.pickup_address}
+                  pickupNotes={drawer.pickup_notes}
+                  dropoff={drawer.dropoff_address}
+                  dropoffNotes={drawer.dropoff_notes}
+                />
+              </Section>
+
+              {(drawer.sender_name || drawer.sender_phone || drawer.recipient_name || drawer.recipient_phone) && (
+                <Section icon={<PersonIcon fontSize="small" />} title="Sender / Recipient">
+                  <Stack direction="row" spacing={2} divider={<Divider orientation="vertical" flexItem />}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: 'text.disabled', mb: 0.25 }}>
+                        <CallMadeIcon sx={{ fontSize: 14 }} />
+                        <Typography variant="caption" sx={{ fontWeight: 700 }}>SENDER</Typography>
+                      </Stack>
+                      <Contact label="" name={drawer.sender_name} phone={drawer.sender_phone} />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: 'text.disabled', mb: 0.25 }}>
+                        <CallReceivedIcon sx={{ fontSize: 14 }} />
+                        <Typography variant="caption" sx={{ fontWeight: 700 }}>RECIPIENT</Typography>
+                      </Stack>
+                      <Contact label="" name={drawer.recipient_name} phone={drawer.recipient_phone} />
+                    </Box>
+                  </Stack>
+                </Section>
               )}
 
-              <SectionLabel>Route</SectionLabel>
-              <InfoRow icon={<PlaceIcon fontSize="small" sx={{ color: 'success.main' }} />} label="Pickup" value={drawer.pickup_address} />
-              <InfoRow icon={<Box />} label="Pickup notes" value={drawer.pickup_notes} />
-              <InfoRow icon={<FlagIcon fontSize="small" sx={{ color: 'error.main' }} />} label="Drop-off" value={drawer.dropoff_address} />
-              <InfoRow icon={<Box />} label="Drop-off notes" value={drawer.dropoff_notes} />
+              <Section icon={<Inventory2Icon fontSize="small" />} title="Package">
+                <Field icon={<CategoryIcon fontSize="small" />} label="Category" value={drawer.package_category} />
+                <Field icon={<DescriptionIcon fontSize="small" />} label="Description" value={drawer.package_description} />
+                <Field icon={<StraightenIcon fontSize="small" />} label="Size" value={drawer.package_size} />
+                <Field icon={<ScaleIcon fontSize="small" />} label="Weight" value={drawer.weight != null ? `${drawer.weight} kg` : undefined} />
+                <Field icon={<NotesIcon fontSize="small" />} label="Special instructions" value={drawer.special_instructions} />
+              </Section>
 
-              <SectionLabel>Sender / Recipient</SectionLabel>
-              <InfoRow icon={<PersonIcon fontSize="small" />} label="Sender" value={[drawer.sender_name, drawer.sender_phone].filter(Boolean).join(' · ')} />
-              <InfoRow icon={<PersonIcon fontSize="small" />} label="Recipient" value={[drawer.recipient_name, drawer.recipient_phone].filter(Boolean).join(' · ')} />
-
-              <SectionLabel>Package</SectionLabel>
-              <InfoRow icon={<Inventory2Icon fontSize="small" />} label="Category" value={drawer.package_category} />
-              <InfoRow icon={<Box />} label="Description" value={drawer.package_description} />
-              <InfoRow icon={<Box />} label="Size" value={drawer.package_size} />
-              <InfoRow icon={<ScaleIcon fontSize="small" />} label="Weight" value={drawer.weight != null ? `${drawer.weight} kg` : undefined} />
-              <InfoRow icon={<NotesIcon fontSize="small" />} label="Special instructions" value={drawer.special_instructions} />
-
-              <SectionLabel>Order info</SectionLabel>
-              <InfoRow icon={<PaidIcon fontSize="small" />} label="Price" value={drawer.price != null ? currency(drawer.price) : undefined} />
-              <InfoRow icon={<Box />} label="Placed" value={fmtDate(drawer.created_at)} />
-              <InfoRow icon={<Box />} label="Accepted" value={fmtDate(drawer.accepted_at)} />
-              <InfoRow icon={<Box />} label="Last updated" value={fmtDate(drawer.updated_at)} />
-
-              <Divider sx={{ mt: 3 }} />
-            </Box>
+              <Section icon={<AccessTimeIcon fontSize="small" />} title="Timeline">
+                <Field icon={<AccessTimeIcon fontSize="small" />} label="Placed" value={fmtDate(drawer.created_at)} />
+                <Field icon={<CheckCircleIcon fontSize="small" />} label="Accepted" value={drawer.accepted_at ? fmtDate(drawer.accepted_at) : undefined} />
+                <Field icon={<UpdateIcon fontSize="small" />} label="Last updated" value={fmtDate(drawer.updated_at)} />
+              </Section>
+            </Stack>
           </Box>
         )}
       </Drawer>
