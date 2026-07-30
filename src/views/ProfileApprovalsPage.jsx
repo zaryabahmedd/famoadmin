@@ -21,6 +21,9 @@ import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
 
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
@@ -28,6 +31,12 @@ import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
 import PageHeader from '../components/PageHeader';
 
 const TAB_MAP = ['pending', 'approved', 'rejected'];
+
+// Drivers and customers live in separate tables; `type` picks which one the API reads.
+const AUDIENCES = [
+  { value: 'rider', label: 'Drivers', noun: 'driver' },
+  { value: 'user', label: 'Customers', noun: 'customer' },
+];
 
 function DiffField({ label, current, requested }) {
   const changed = requested != null && requested !== current;
@@ -78,7 +87,7 @@ function AvatarDiff({ currentUrl, requestedUrl }) {
 }
 
 function RequestCard({ req, isPending, onApprove, onReject, acting }) {
-  const user = req.users;
+  const user = req.owner;
   const requestedAt = new Date(req.requested_at).toLocaleString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
@@ -156,6 +165,7 @@ function RequestCard({ req, isPending, onApprove, onReject, acting }) {
 
 export default function ProfileApprovalsPage() {
   const [tab, setTab] = useState(0);
+  const [audience, setAudience] = useState('rider');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(null);
@@ -164,24 +174,25 @@ export default function ProfileApprovalsPage() {
   const [rejectReason, setRejectReason] = useState('');
 
   const status = TAB_MAP[tab];
+  const noun = AUDIENCES.find((a) => a.value === audience)?.noun || '';
 
-  const fetchRequests = useCallback(async (s) => {
+  const fetchRequests = useCallback(async (s, type) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/profile-approvals?status=${s}`);
+      const res = await fetch(`/api/profile-approvals?status=${s}&type=${type}`);
       const data = await res.json();
-      if (res.ok) setRequests(data);
+      setRequests(res.ok && Array.isArray(data) ? data : []);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchRequests(status); }, [status, fetchRequests]);
+  useEffect(() => { fetchRequests(status, audience); }, [status, audience, fetchRequests]);
 
   const handleApprove = useCallback(async (id) => {
     setActing(id);
     try {
-      const res = await fetch(`/api/profile-approvals/${id}/approve`, { method: 'POST' });
+      const res = await fetch(`/api/profile-approvals/${id}/approve?type=${audience}`, { method: 'POST' });
       if (res.ok) {
         setRequests((prev) => prev.filter((r) => r.id !== id));
         setToast({ open: true, msg: 'Profile change approved.', severity: 'success' });
@@ -192,7 +203,7 @@ export default function ProfileApprovalsPage() {
     } finally {
       setActing(null);
     }
-  }, []);
+  }, [audience]);
 
   const openRejectDialog = useCallback((id) => {
     setRejectDialog({ open: true, id });
@@ -205,7 +216,7 @@ export default function ProfileApprovalsPage() {
     setActing(id);
     setRejectDialog({ open: false, id: null });
     try {
-      const res = await fetch(`/api/profile-approvals/${id}/reject`, {
+      const res = await fetch(`/api/profile-approvals/${id}/reject?type=${audience}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: rejectReason.trim() }),
@@ -220,14 +231,28 @@ export default function ProfileApprovalsPage() {
     } finally {
       setActing(null);
     }
-  }, [rejectDialog, rejectReason]);
+  }, [rejectDialog, rejectReason, audience]);
 
   return (
     <Box>
       <PageHeader
         title="Profile Approvals"
-        subtitle={loading ? 'Loading…' : `${requests.length} ${status} request${requests.length !== 1 ? 's' : ''}`}
+        subtitle={loading ? 'Loading…' : `${requests.length} ${status} ${noun} request${requests.length !== 1 ? 's' : ''}`}
       />
+
+      <ToggleButtonGroup
+        exclusive
+        size="small"
+        value={audience}
+        onChange={(_, v) => { if (v) setAudience(v); }}
+        sx={{ mb: 2 }}
+      >
+        {AUDIENCES.map((a) => (
+          <ToggleButton key={a.value} value={a.value} sx={{ px: 2.5, textTransform: 'none', fontWeight: 600 }}>
+            {a.label}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
 
       <Card sx={{ mb: 3 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2 }}>
@@ -241,7 +266,7 @@ export default function ProfileApprovalsPage() {
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
       ) : requests.length === 0 ? (
         <Card sx={{ p: 6, textAlign: 'center' }}>
-          <Typography color="text.secondary">No {status} requests.</Typography>
+          <Typography color="text.secondary">No {status} {noun} requests.</Typography>
         </Card>
       ) : (
         requests.map((req) => (
